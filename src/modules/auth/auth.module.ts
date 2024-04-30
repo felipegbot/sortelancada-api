@@ -6,12 +6,12 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthController } from './controllers/auth.controller';
-import { UserModule } from '../user/user.module';
+import { AdminUserModule } from '../admin-user/admin-user.module';
 
 @Module({
   controllers: [AuthController],
   imports: [
-    UserModule,
+    AdminUserModule,
     ConfigModule,
     JwtModule.registerAsync({
       useFactory: () => ({
@@ -21,6 +21,6 @@ import { UserModule } from '../user/user.module';
     }),
     PassportModule,
   ],
-  providers: [AuthService, UserModule, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
 })
 export class AuthModule {}

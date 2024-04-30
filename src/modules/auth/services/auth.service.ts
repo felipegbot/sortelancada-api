@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '@/modules/user/user.entity';
+import { AdminUser } from '@/modules/admin-user/admin-user.entity';
 import * as bcrypt from 'bcrypt';
-import { FindOneUserService } from '@/modules/user/services/find-one-user.service';
+import { FindOneAdminUserService } from '@/modules/admin-user/services/find-one-admin-user.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly findOneUserService: FindOneUserService,
+    private readonly findOneAdminUserService: FindOneAdminUserService,
     private jwtService: JwtService,
   ) {}
 
   async validateUser(
     username: string,
     password: string,
-  ): Promise<Partial<User>> {
-    const user = await this.findOneUserService.findOne({
+  ): Promise<Partial<AdminUser>> {
+    const user = await this.findOneAdminUserService.findOne({
       key: 'email',
       value: username,
       withPasswordHash: true,
@@ -30,7 +30,7 @@ export class AuthService {
     return null;
   }
 
-  async getLoginResponse(user: User) {
+  async getLoginResponse(user: AdminUser) {
     const payload = {
       id: user.id,
       name: user.name,

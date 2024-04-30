@@ -1,11 +1,13 @@
-import { FindOneUserService } from '@/modules/user/services/find-one-user.service';
-import { User } from '@/modules/user/user.entity';
+import { AdminUser } from '@/modules/admin-user/admin-user.entity';
+import { FindOneAdminUserService } from '@/modules/admin-user/services/find-one-admin-user.service';
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly findOneUserService: FindOneUserService) {
+  constructor(
+    private readonly findOneAdminUserService: FindOneAdminUserService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: process.env.JWT_SECRET,
@@ -14,7 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const user: User = await this.findOneUserService.findOne({
+    const user: AdminUser = await this.findOneAdminUserService.findOne({
       key: 'id',
       value: payload.id,
       relations: ['account'],

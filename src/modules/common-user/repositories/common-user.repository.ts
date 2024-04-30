@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import ApiError from '@/common/error/entities/api-error.entity';
 import { CommonUser } from '../common-user.entity';
-import { FindOneUserOptions } from '../interfaces/find-one-common-user-options.interface';
+import { FindOneCommonUserOptions } from '../interfaces/find-one-common-user-options.interface';
 
 @Injectable()
 export class CommonUserRepository {
@@ -17,19 +17,19 @@ export class CommonUserRepository {
     return dbUser;
   }
 
-  async findOne(options: FindOneUserOptions): Promise<CommonUser> {
-    const qb = this.userRepository.createQueryBuilder('users');
+  async findOne(options: FindOneCommonUserOptions): Promise<CommonUser> {
+    const qb = this.userRepository.createQueryBuilder('common_users');
 
     if (options.relations) {
       options.relations.forEach((relation) => {
-        qb.leftJoinAndSelect(`users.${relation}`, relation);
+        qb.leftJoinAndSelect(`common_users.${relation}`, relation);
       });
     }
 
-    if (options.withPasswordHash) qb.addSelect('users.password_hash');
-
     if (options.key && options.value)
-      qb.where(`users.${options.key} = :value`, { value: options.value });
+      qb.where(`common_users.${options.key} = :value`, {
+        value: options.value,
+      });
 
     const commonUser = await qb.getOne();
     return commonUser;

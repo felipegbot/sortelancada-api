@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonUser } from './common-user.entity';
-import { UserController } from './controllers/common-user.controller';
+import { CommonUserController } from './controllers/common-user.controller';
 import { CommonUserRepository } from './repositories/common-user.repository';
 import { CreateCommonUserService } from './services/create-common-user.service';
 import { FindOneCommonUserService } from './services/find-one-common-user.service';
 
 @Module({
-  controllers: [UserController],
+  controllers: [CommonUserController],
   imports: [TypeOrmModule.forFeature([CommonUser])],
   providers: [
     CreateCommonUserService,
@@ -16,4 +16,4 @@ import { FindOneCommonUserService } from './services/find-one-common-user.servic
   ],
   exports: [CreateCommonUserService, FindOneCommonUserService],
 })
-export class UserModule {}
+export class CommonUserModule {}

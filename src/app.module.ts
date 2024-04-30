@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config } from 'dotenv';
 import { AuthModule } from './modules/auth/auth.module';
-import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
+import { AdminUserModule } from './modules/admin-user/admin-user.module';
+import { CommonUserModule } from './modules/common-user/common-user.module';
 config();
 
 @Module({
@@ -21,7 +22,8 @@ config();
       synchronize: true,
     }),
     AuthModule,
-    UserModule,
+    CommonUserModule,
+    AdminUserModule,
   ],
 })
 export class AppModule {}
