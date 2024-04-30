@@ -19,7 +19,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user: AdminUser = await this.findOneAdminUserService.findOne({
       key: 'id',
       value: payload.id,
-      relations: ['account'],
     });
     return user;
   }

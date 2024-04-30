@@ -5,6 +5,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { AdminUserModule } from './modules/admin-user/admin-user.module';
 import { CommonUserModule } from './modules/common-user/common-user.module';
+import { RaffleModule } from './modules/raffles/raffle.module';
 config();
 
 @Module({
@@ -24,6 +25,7 @@ config();
     AuthModule,
     CommonUserModule,
     AdminUserModule,
+    RaffleModule,
   ],
 })
 export class AppModule {}
