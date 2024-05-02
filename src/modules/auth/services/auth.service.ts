@@ -16,9 +16,8 @@ export class AuthService {
     password: string,
   ): Promise<Partial<AdminUser>> {
     const user = await this.findOneAdminUserService.findOne({
-      key: 'email',
-      value: username,
-      withPasswordHash: true,
+      where: [{ email: username }],
+      with_password_hash: true,
     });
     if (user && (await bcrypt.compare(password, user.password_hash))) {
       return {

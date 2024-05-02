@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AdminUser } from '../admin-user.entity';
 import { Repository } from 'typeorm';
-import { FindOneAdminUserOptions } from '../interfaces/find-one-admin-user.interface';
+import { FindOneOptions } from '@/common/types/find-one-options.type';
 
 @Injectable()
 export class AdminUserRepository {
@@ -11,19 +11,22 @@ export class AdminUserRepository {
     private readonly adminUserRepository: Repository<AdminUser>,
   ) {}
 
-  async findOne(options: FindOneAdminUserOptions): Promise<AdminUser> {
+  async findOne(options: FindOneOptions<AdminUser>): Promise<AdminUser> {
     const qb = this.adminUserRepository.createQueryBuilder('admin_users');
     if (options.relations) {
       options.relations.forEach((relation) =>
         qb.leftJoinAndSelect(`admin_users.${relation}`, relation),
       );
     }
-    if (options.withPasswordHash) qb.addSelect('admin_users.password_hash');
+    if (options.with_password_hash) qb.addSelect('admin_users.password_hash');
 
-    if (options.key && options.value)
-      qb.where(`admin_users.${options.key} = :value`, {
-        value: options.value,
-      });
+    if (options.where) {
+      for (const where of options.where) {
+        for (const [key, value] of Object.entries(where)) {
+          qb.andWhere(`admin_users.${key} = :${key}`, { [key]: value });
+        }
+      }
+    }
 
     const adminUser = await qb.getOne();
     return adminUser;

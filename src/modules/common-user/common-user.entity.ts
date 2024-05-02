@@ -8,6 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Raffle } from '../raffles/raffle.entity';
+import { Payment } from '../payment/payment.entity';
 
 @Entity('common_users')
 export class CommonUser {
@@ -22,6 +23,9 @@ export class CommonUser {
 
   @OneToMany(() => Raffle, (raffle) => raffle.winner_common_user)
   raffles_winned: Raffle[];
+
+  @OneToMany(() => Payment, (payment) => payment.commonUser)
+  payments: Payment[];
 
   @CreateDateColumn({ select: false })
   created_at: Date;

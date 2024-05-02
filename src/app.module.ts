@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AdminUserModule } from './modules/admin-user/admin-user.module';
 import { CommonUserModule } from './modules/common-user/common-user.module';
 import { RaffleModule } from './modules/raffles/raffle.module';
+import { PaymentModule } from './modules/payment/payment.module';
 config();
 
 @Module({
@@ -26,6 +27,7 @@ config();
     CommonUserModule,
     AdminUserModule,
     RaffleModule,
+    PaymentModule,
   ],
 })
 export class AppModule {}

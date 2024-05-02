@@ -1,9 +1,9 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import ApiError from '@/common/error/entities/api-error.entity';
 import { CommonUser } from '../common-user.entity';
-import { FindOneCommonUserOptions } from '../interfaces/find-one-common-user-options.interface';
+import { FindOneOptions } from '@/common/types/find-one-options.type';
 
 @Injectable()
 export class CommonUserRepository {
@@ -17,7 +17,7 @@ export class CommonUserRepository {
     return dbUser;
   }
 
-  async findOne(options: FindOneCommonUserOptions): Promise<CommonUser> {
+  async findOne(options: FindOneOptions<CommonUser>): Promise<CommonUser> {
     const qb = this.userRepository.createQueryBuilder('common_users');
 
     if (options.relations) {
@@ -26,24 +26,26 @@ export class CommonUserRepository {
       });
     }
 
-    if (options.key && options.value)
-      qb.where(`common_users.${options.key} = :value`, {
-        value: options.value,
-      });
+    if (options.where) {
+      for (const where of options.where) {
+        for (const [key, value] of Object.entries(where)) {
+          qb.andWhere(`common_users.${key} = :${key}`, { [key]: value });
+        }
+      }
+    }
 
     const commonUser = await qb.getOne();
     return commonUser;
   }
 
-  async updateUserPassword(id: string, password_hash: string) {
-    try {
-      const commonUser = await this.findOne({ key: 'id', value: id });
-      return await this.userRepository.save({ ...commonUser, password_hash });
-    } catch (error) {}
-    throw new ApiError(
-      'error-updating-commonUser-password',
-      'Erro ao atualizar a senha, contate o suporte',
-      500,
-    );
+  async update(
+    id: string,
+    userData: DeepPartial<CommonUser>,
+  ): Promise<CommonUser> {
+    const user = await this.userRepository.findOne({ where: [{ id }] });
+    if (!user)
+      throw new ApiError('user-not-found', 'Usuário comum não encontrado', 404);
+    Object.assign(user, userData);
+    return await this.userRepository.save(user);
   }
 }
