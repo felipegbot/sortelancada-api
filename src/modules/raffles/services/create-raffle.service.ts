@@ -4,6 +4,7 @@ import { Raffle } from '../raffle.entity';
 import { CreateRaffleDto } from '../dtos/create-raffle.dto';
 import { AdminUser } from '@/modules/admin-user/admin-user.entity';
 import { RaffleStatus } from '../enum/raffle-status.enum';
+import { DeepPartial } from 'typeorm';
 
 @Injectable()
 export class CreateRaffleService {
@@ -30,6 +31,7 @@ export class CreateRaffleService {
       (_, i) => i + createRaffleDto.start_number,
     );
     raffle.initial_numbers_qtd = raffleNumbersLength;
+    raffle.available_numbers_qtd = raffleNumbersLength;
 
     const raffleDb = await this.raffleRepository.createRaffle(raffle);
 
@@ -39,5 +41,12 @@ export class CreateRaffleService {
       createRaffleDto.end_number,
     ];
     return raffleDb;
+  }
+
+  async updateRaffle(
+    id: string,
+    raffleData: DeepPartial<Raffle>,
+  ): Promise<Raffle> {
+    return await this.raffleRepository.update(id, raffleData);
   }
 }

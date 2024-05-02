@@ -41,6 +41,9 @@ export class Raffle {
   available_numbers: number[];
 
   @Column()
+  available_numbers_qtd: number;
+
+  @Column()
   initial_numbers_qtd: number;
 
   @Column({ type: 'float' })

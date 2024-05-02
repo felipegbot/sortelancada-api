@@ -14,13 +14,13 @@ import { Payment } from '../payment/payment.entity';
 @Entity('users_raffle_number')
 export class UsersRaffleNumber {
   @PrimaryGeneratedColumn()
-  id: number;
+  id: string;
 
   @Column()
-  user_id: number;
+  user_id: string;
 
   @Column()
-  raffle_id: number;
+  raffle_id: string;
 
   @Column()
   number: number;
