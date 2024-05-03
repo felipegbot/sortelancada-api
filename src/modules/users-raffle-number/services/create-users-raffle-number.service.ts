@@ -3,7 +3,6 @@ import { UsersRaffleNumberRepository } from '../repositories/users-raffle-number
 import { FindOneCommonUserService } from '@/modules/common-user/services';
 import ApiError from '@/common/error/entities/api-error.entity';
 import { QueryRaffleService } from '@/modules/raffles/services';
-import { UsersRaffleNumber } from '../users-raffle-number.entity';
 
 @Injectable()
 export class CreateUsersRaffleNumberService {

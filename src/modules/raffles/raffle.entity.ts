@@ -6,12 +6,14 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { RaffleStatus } from './enum/raffle-status.enum';
 import { AdminUser } from '../admin-user/admin-user.entity';
 import { CommonUser } from '../common-user/common-user.entity';
+import { UsersRaffleNumber } from '../users-raffle-number/users-raffle-number.entity';
 
 @Entity('raffles')
 export class Raffle {
@@ -33,7 +35,6 @@ export class Raffle {
   @Column({ type: 'enum', enum: RaffleStatus })
   status: RaffleStatus;
 
-  @Index()
   @Column({ nullable: true })
   prize_number: number;
 
@@ -56,6 +57,9 @@ export class Raffle {
 
   @Column({ nullable: true })
   winner_common_user_id: string;
+
+  @OneToMany(() => UsersRaffleNumber, (urn) => urn.raffle)
+  users_raffle_number: UsersRaffleNumber[];
 
   @ManyToOne(() => AdminUser, (adminUser) => adminUser.raffles)
   @JoinColumn({ name: 'admin_user_id' })

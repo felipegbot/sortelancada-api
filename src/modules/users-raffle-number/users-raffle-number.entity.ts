@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -9,6 +10,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Payment } from '../payment/payment.entity';
+import { CommonUser } from '../common-user/common-user.entity';
+import { Raffle } from '../raffles/raffle.entity';
 
 @Unique(['raffle_id', 'number'])
 @Entity('users_raffle_number')
@@ -17,7 +20,8 @@ export class UsersRaffleNumber {
   id: string;
 
   @Column()
-  user_id: string;
+  @Index('common_user_id_index')
+  common_user_id: string;
 
   @Column()
   raffle_id: string;
@@ -27,6 +31,17 @@ export class UsersRaffleNumber {
 
   @Column()
   payment_id: string;
+
+  @ManyToOne(
+    () => CommonUser,
+    (commonUser) => commonUser.raffles_numbers_bought,
+  )
+  @JoinColumn({ name: 'common_user_id' })
+  common_user: CommonUser;
+
+  @ManyToOne(() => Raffle, (raffle) => raffle.users_raffle_number)
+  @JoinColumn({ name: 'raffle_id' })
+  raffle: Raffle;
 
   @ManyToOne(() => Payment, (payment) => payment.users_raffle_number)
   @JoinColumn({ name: 'payment_id' })

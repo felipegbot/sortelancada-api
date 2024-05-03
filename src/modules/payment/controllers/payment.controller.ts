@@ -44,6 +44,8 @@ export class PaymentController {
     const raffle = await this.queryRaffleService.findOneRaffle({
       where: [{ id: generatePaymentDto.raffle_id }],
     });
+    if (!raffle)
+      throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
     if (raffle.available_numbers_qtd < generatePaymentDto.amount) {
       throw new ApiError(
         'invalid-amount',
@@ -85,8 +87,6 @@ export class PaymentController {
     const { ok, count } = await this.lock.acquire(
       'generateRaffleNumber',
       async () => {
-        console.log('inside lock');
-        console.time('generatingRaffleNumber');
         const { count } =
           await this.createUsersRaffleNumberService.generateRaffleNumber(
             payment.raffle_id,
@@ -94,14 +94,12 @@ export class PaymentController {
             payment.id,
             payment.common_user_id,
           );
-        console.timeEnd('generatingRaffleNumber');
 
         await this.createPaymentService.updatePaymentStatus(
           payment.id,
           PaymentStatus.SUCCESS,
         );
         //TODO: Implementar confirmação de pagamento via webhook
-        console.log('confirmPayment');
 
         return { ok: true, count };
       },

@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Raffle } from '../raffles/raffle.entity';
 import { Payment } from '../payment/payment.entity';
+import { UsersRaffleNumber } from '../users-raffle-number/users-raffle-number.entity';
 
 @Entity('common_users')
 export class CommonUser {
@@ -26,6 +27,12 @@ export class CommonUser {
 
   @OneToMany(() => Payment, (payment) => payment.commonUser)
   payments: Payment[];
+
+  @OneToMany(
+    () => UsersRaffleNumber,
+    (usersRaffleNumber) => usersRaffleNumber.common_user,
+  )
+  raffles_numbers_bought: UsersRaffleNumber[];
 
   @CreateDateColumn({ select: false })
   created_at: Date;
