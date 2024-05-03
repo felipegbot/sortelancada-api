@@ -12,7 +12,11 @@ export class QueryRaffleService {
     return this.raffleRepository.listRaffle(options);
   }
 
-  async findOneRaffle(options: FindOneOptions<Raffle>) {
-    return this.raffleRepository.findOne(options);
+  async findOneRaffle(options: FindOneOptions<Raffle>, withWinners?: boolean) {
+    return this.raffleRepository.findOne(options, withWinners);
+  }
+
+  async getWinners(raffleId: string) {
+    return this.raffleRepository.getWinners(raffleId);
   }
 }

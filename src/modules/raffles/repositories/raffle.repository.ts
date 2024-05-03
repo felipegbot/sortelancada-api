@@ -5,6 +5,7 @@ import { Raffle } from '../raffle.entity';
 import ApiError from '@/common/error/entities/api-error.entity';
 import { ListOptions } from '@/common/types/list-options.type';
 import { FindOneOptions } from '@/common/types/find-one-options.type';
+import { UsersRaffleNumber } from '@/modules/users-raffle-number/users-raffle-number.entity';
 
 @Injectable()
 export class RaffleRepository {
@@ -50,7 +51,10 @@ export class RaffleRepository {
     return { raffles, count };
   }
 
-  async findOne(options: FindOneOptions<Raffle>): Promise<Raffle> {
+  async findOne(
+    options: FindOneOptions<Raffle>,
+    withWinners?: boolean,
+  ): Promise<Raffle> {
     const qb = this.raffleRepository.createQueryBuilder('raffles');
     if (options.relations) {
       options.relations.forEach((relation) =>
@@ -67,6 +71,45 @@ export class RaffleRepository {
 
     const raffle = await qb.getOne();
     return raffle;
+  }
+
+  async getWinners(raffleId: string): Promise<{
+    winner: UsersRaffleNumber;
+    giftWinners: UsersRaffleNumber[];
+  }> {
+    const qb = this.raffleRepository.createQueryBuilder('raffles');
+    qb.where('raffles.id = :id', { id: raffleId });
+
+    const rawRaffle = await qb
+      .select(['raffles.prize_number', 'raffles.gift_numbers'])
+      .getRawOne();
+
+    // this is a simple array of numbers as string, so we need to split it and convert it to numbers
+    const giftNumbers =
+      rawRaffle.raffles_gift_numbers
+        .replace(/\[|\]/g, '')
+        .split(',')
+        .map((n: string) => parseInt(n)) ?? [];
+
+    const flattenedNumbers = [rawRaffle.raffles_prize_number, ...giftNumbers];
+
+    qb.leftJoinAndSelect('raffles.users_raffle_number', 'users_raffle_number');
+    qb.leftJoinAndSelect('users_raffle_number.common_user', 'common_user');
+    // the winner is the user that has the prize number or one of the gift numbers
+    qb.andWhere('users_raffle_number.number IN (:...numbers)', {
+      numbers: flattenedNumbers,
+    });
+
+    const raffle = await qb.getOne();
+
+    return {
+      winner: raffle.users_raffle_number.find(
+        (urn) => urn.number == raffle.prize_number,
+      ),
+      giftWinners: raffle.users_raffle_number.filter((urn) =>
+        giftNumbers.includes(urn.number),
+      ),
+    };
   }
 
   async update(

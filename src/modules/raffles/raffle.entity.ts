@@ -38,6 +38,9 @@ export class Raffle {
   @Column({ nullable: true })
   prize_number: number;
 
+  @Column({ type: 'simple-array', nullable: true })
+  gift_numbers: number[];
+
   @Column({ type: 'simple-array', default: [] })
   available_numbers: number[];
 

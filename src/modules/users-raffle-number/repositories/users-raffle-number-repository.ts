@@ -80,4 +80,30 @@ export class UsersRaffleNumberRepository {
       );
     }
   }
+
+  async getTopBuyers(raffleId: number): Promise<
+    {
+      common_user_name: string;
+      count: number;
+    }[]
+  > {
+    const qb = this.usersRaffleNumberRepository.createQueryBuilder('urn');
+    qb.where('urn.raffle_id = :raffleId', { raffleId });
+
+    qb.select('COUNT(urn.common_user_id) as count');
+
+    qb.leftJoinAndSelect('urn.common_user', 'common_user');
+    qb.addGroupBy('common_user.id');
+
+    qb.orderBy('count', 'DESC');
+    qb.take(10);
+    const result = await qb.getRawMany();
+    const formattedResult = result.map((obj) => {
+      return {
+        common_user_name: obj.common_user_name as string,
+        count: obj.count as number,
+      };
+    });
+    return formattedResult;
+  }
 }
