@@ -26,7 +26,7 @@ export class Payment {
   @Column({ type: 'enum', enum: PaymentStatus })
   status: PaymentStatus;
 
-  @Column({ unique: true })
+  @Column({ nullable: true })
   pix_code: string;
 
   @Column()

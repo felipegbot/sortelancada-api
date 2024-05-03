@@ -35,4 +35,11 @@ export class CreatePaymentService {
     const paymentDb = await this.paymentRepository.createPayment(payment);
     return paymentDb;
   }
+
+  async updatePaymentStatus(
+    id: string,
+    status: PaymentStatus,
+  ): Promise<Payment> {
+    return this.paymentRepository.updatePaymentStatus(id, status);
+  }
 }

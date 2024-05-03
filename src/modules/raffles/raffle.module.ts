@@ -9,6 +9,6 @@ import { CreateRaffleService, QueryRaffleService } from './services';
   controllers: [RaffleController],
   imports: [TypeOrmModule.forFeature([Raffle])],
   providers: [RaffleRepository, CreateRaffleService, QueryRaffleService],
-  exports: [QueryRaffleService],
+  exports: [QueryRaffleService, CreateRaffleService],
 })
 export class RaffleModule {}

@@ -3,7 +3,7 @@ import { CreateCommonUserDto } from '../dtos/create-common-user.dto';
 import { CreateCommonUserService, FindOneCommonUserService } from '../services';
 import { CommonUser } from '../common-user.entity';
 
-@Controller('user')
+@Controller('common-user')
 export class CommonUserController {
   constructor(
     private readonly findOneCommonUser: FindOneCommonUserService,
@@ -13,8 +13,11 @@ export class CommonUserController {
 
   @Post('create-or-update')
   async createUser(@Body() createCommonUserDto: CreateCommonUserDto) {
+    const { phone } = createCommonUserDto;
+    const formattedPhone = phone.replace(/\D/g, '');
+    createCommonUserDto.phone = formattedPhone;
     const alreadyExists = await this.findOneCommonUser.findOne({
-      where: [{ phone: createCommonUserDto.phone }],
+      where: [{ phone: formattedPhone }],
     });
 
     let user: CommonUser;

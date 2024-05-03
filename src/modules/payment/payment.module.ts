@@ -6,6 +6,8 @@ import { RaffleModule } from '../raffles/raffle.module';
 import { PaymentController } from './controllers/payment.controller';
 import { CreatePaymentService } from './services/create-payment.service';
 import { PaymentRepository } from './repositories/payment.repository';
+import { QueryPaymentService } from './services/find-one-payment.service';
+import { UsersRaffleNumberModule } from '../users-raffle-number/users-raffle-number.module';
 
 @Module({
   controllers: [PaymentController],
@@ -13,7 +15,8 @@ import { PaymentRepository } from './repositories/payment.repository';
     TypeOrmModule.forFeature([Payment]),
     CommonUserModule,
     RaffleModule,
+    UsersRaffleNumberModule,
   ],
-  providers: [CreatePaymentService, PaymentRepository],
+  providers: [CreatePaymentService, QueryPaymentService, PaymentRepository],
 })
 export class PaymentModule {}

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, Validate } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, Validate } from 'class-validator';
 import isValidPhone from '@brazilian-utils/is-valid-phone';
 
 export class GeneratePaymentDto {
@@ -7,6 +7,9 @@ export class GeneratePaymentDto {
       userMessage: 'missing-phone',
       message: 'Telefone não informado',
     },
+  })
+  @IsString({
+    context: { userMessage: 'invalid-phone', message: 'Telefone inválido' },
   })
   @Validate((obj: GeneratePaymentDto) => isValidPhone(obj.phone))
   phone: string;

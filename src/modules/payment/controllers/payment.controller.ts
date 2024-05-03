@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import { GeneratePaymentDto } from '../dtos/generate-payment.dto';
 import { FindOneCommonUserService } from '@/modules/common-user/services';
 import { CreatePaymentService } from '../services/create-payment.service';
@@ -7,20 +7,33 @@ import {
   CreateRaffleService,
   QueryRaffleService,
 } from '@/modules/raffles/services';
+import { CreateUsersRaffleNumberService } from '@/modules/users-raffle-number/services/create-users-raffle-number.service';
+import { QueryPaymentService } from '../services/find-one-payment.service';
+import { PaymentStatus } from '../enums/payment-status.enum';
+import * as AsyncLock from 'async-lock';
 
 @Controller('payment')
 export class PaymentController {
+  private lock: AsyncLock;
+
   constructor(
     private readonly findOneCommonUserService: FindOneCommonUserService,
     private readonly createPaymentService: CreatePaymentService,
     private readonly createRaffleService: CreateRaffleService,
+    private readonly queryPaymentService: QueryPaymentService,
     private readonly queryRaffleService: QueryRaffleService,
-  ) {}
+    private readonly createUsersRaffleNumberService: CreateUsersRaffleNumberService,
+  ) {
+    this.lock = new AsyncLock();
+  }
 
   @Post('/generate-payment')
   async generatePayment(@Body() generatePaymentDto: GeneratePaymentDto) {
+    const { phone } = generatePaymentDto;
+    const formattedPhone = phone.replace(/\D/g, '');
+    generatePaymentDto.phone = formattedPhone;
     const commonUser = await this.findOneCommonUserService.findOne({
-      where: [{ phone: generatePaymentDto.phone }],
+      where: [{ phone: formattedPhone }],
     });
     if (!commonUser)
       throw new ApiError(
@@ -28,14 +41,21 @@ export class PaymentController {
         'Usuário não encontrado com esse telefone',
         404,
       );
+    const raffle = await this.queryRaffleService.findOneRaffle({
+      where: [{ id: generatePaymentDto.raffle_id }],
+    });
+    if (raffle.available_numbers_qtd < generatePaymentDto.amount) {
+      throw new ApiError(
+        'invalid-amount',
+        'Quantidade de números indisponível',
+        400,
+      );
+    }
+
     const payment = await this.createPaymentService.createPayment(
       generatePaymentDto,
       commonUser,
     );
-
-    const raffle = await this.queryRaffleService.findOneRaffle({
-      where: [{ id: generatePaymentDto.raffle_id }],
-    });
 
     await this.createRaffleService.updateRaffle(raffle.id, {
       available_numbers_qtd:
@@ -51,8 +71,41 @@ export class PaymentController {
   }
 
   @Post('/confirm-payment/:payment_id')
-  async confirmPayment() {
-    //TODO: Implementar confirmação de pagamento via webhook
-    console.log('confirmPayment');
+  async confirmPayment(@Param('payment_id') paymentId: string) {
+    const payment = await this.queryPaymentService.findOne({
+      where: [{ id: paymentId }],
+    });
+
+    if (!payment || payment.status !== PaymentStatus.PENDING)
+      throw new ApiError(
+        'payment-not-found',
+        'Pagamento pendente não encontrado',
+        404,
+      );
+    const { ok, count } = await this.lock.acquire(
+      'generateRaffleNumber',
+      async () => {
+        console.log('inside lock');
+        console.time('generatingRaffleNumber');
+        const { count } =
+          await this.createUsersRaffleNumberService.generateRaffleNumber(
+            payment.raffle_id,
+            payment.raffles_quantity,
+            payment.id,
+            payment.common_user_id,
+          );
+        console.timeEnd('generatingRaffleNumber');
+
+        await this.createPaymentService.updatePaymentStatus(
+          payment.id,
+          PaymentStatus.SUCCESS,
+        );
+        //TODO: Implementar confirmação de pagamento via webhook
+        console.log('confirmPayment');
+
+        return { ok: true, count };
+      },
+    );
+    return { ok, count };
   }
 }
