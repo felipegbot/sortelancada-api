@@ -3,7 +3,6 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -26,7 +25,7 @@ export class Raffle {
   @Column({ nullable: true })
   description: string;
 
-  @Column({ type: 'simple-array', default: [] })
+  @Column({ type: 'simple-array', default: '' })
   photos_url: string[];
 
   @Column()
@@ -38,10 +37,13 @@ export class Raffle {
   @Column({ nullable: true })
   prize_number: number;
 
-  @Column({ type: 'simple-array', nullable: true })
+  @Column({ type: 'simple-array', nullable: true, default: '' })
   gift_numbers: number[];
 
-  @Column({ type: 'simple-array', default: [] })
+  @Column({ type: 'simple-array', nullable: true, default: '' })
+  gift_numbers_winners: (CommonUser & { number: number })[];
+
+  @Column({ type: 'simple-array', default: [], select: false })
   available_numbers: number[];
 
   @Column()

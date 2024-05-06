@@ -12,8 +12,8 @@ export class QueryRaffleService {
     return this.raffleRepository.listRaffle(options);
   }
 
-  async findOneRaffle(options: FindOneOptions<Raffle>, withWinners?: boolean) {
-    return this.raffleRepository.findOne(options, withWinners);
+  async findOneRaffle(options: FindOneOptions<Raffle>) {
+    return this.raffleRepository.findOne(options);
   }
 
   async getWinners(raffleId: string) {

@@ -8,6 +8,7 @@ import { CreatePaymentService } from './services/create-payment.service';
 import { PaymentRepository } from './repositories/payment.repository';
 import { QueryPaymentService } from './services/find-one-payment.service';
 import { UsersRaffleNumberModule } from '../users-raffle-number/users-raffle-number.module';
+import { ValidateWebhookService } from './services/validate-payment-webhook.service';
 
 @Module({
   controllers: [PaymentController],
@@ -17,6 +18,11 @@ import { UsersRaffleNumberModule } from '../users-raffle-number/users-raffle-num
     RaffleModule,
     UsersRaffleNumberModule,
   ],
-  providers: [CreatePaymentService, QueryPaymentService, PaymentRepository],
+  providers: [
+    CreatePaymentService,
+    QueryPaymentService,
+    PaymentRepository,
+    ValidateWebhookService,
+  ],
 })
 export class PaymentModule {}

@@ -81,6 +81,15 @@ export class UsersRaffleNumberRepository {
     }
   }
 
+  async eraseUserNumbersByRaffleId(raffleId: string): Promise<{ ok: boolean }> {
+    const qb = this.usersRaffleNumberRepository.createQueryBuilder('urn');
+    qb.where('urn.raffle_id = :raffleId', { raffleId });
+    qb.softDelete();
+    console.log(qb.getSql());
+    await qb.execute();
+    return { ok: true };
+  }
+
   async getTopBuyers(raffleId: number): Promise<
     {
       common_user_name: string;

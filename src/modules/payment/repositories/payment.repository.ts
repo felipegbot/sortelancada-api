@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Payment } from '../payment.entity';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { PaymentStatus } from '../enums/payment-status.enum';
 import ApiError from '@/common/error/entities/api-error.entity';
 import { FindOneOptions } from '@/common/types/find-one-options.type';
@@ -44,6 +44,19 @@ export class PaymentRepository {
       throw new ApiError('payment-not-found', 'Pagamento não encontrado', 404);
     }
     payment.status = status;
+    const paymentDb = await this.paymentRepository.save(payment);
+    return paymentDb;
+  }
+
+  async updatePaymentData(
+    id: string,
+    data: DeepPartial<Payment>,
+  ): Promise<Payment> {
+    const payment = await this.findOne({ where: [{ id }] });
+    if (!payment) {
+      throw new ApiError('payment-not-found', 'Pagamento não encontrado', 404);
+    }
+    Object.assign(payment, data);
     const paymentDb = await this.paymentRepository.save(payment);
     return paymentDb;
   }

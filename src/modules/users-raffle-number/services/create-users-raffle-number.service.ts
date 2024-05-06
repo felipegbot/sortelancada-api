@@ -41,4 +41,10 @@ export class CreateUsersRaffleNumberService {
       commonUser,
     );
   }
+
+  async eraseUserNumbersByRaffleId(raffleId: string) {
+    return await this.usersRaffleNumberRepository.eraseUserNumbersByRaffleId(
+      raffleId,
+    );
+  }
 }

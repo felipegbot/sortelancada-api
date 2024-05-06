@@ -1,12 +1,15 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
   Query,
   Req,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CreateRaffleService } from '../services';
 import { CreateRaffleDto } from '../dtos/create-raffle.dto';
@@ -16,13 +19,23 @@ import { AdminUser } from '@/modules/admin-user/admin-user.entity';
 import { QueryRaffleService } from '../services/query-raffle.service';
 import { PaginationDto } from '@/common/dtos/pagination.dto';
 import { QueryUsersRaffleNumberService } from '@/modules/users-raffle-number/services/query-users-raffle-number.service';
+import ApiError from '@/common/error/entities/api-error.entity';
+import { UpdateRaffleDto } from '../dtos/update-raffle.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import ParseImagesPipe from '@/common/pipes/parse-image.pipe';
+import { ProcessedImage, SharpPipe } from '@/common/pipes/sharp.pipe';
+import { RaffleStatus } from '../enum/raffle-status.enum';
+import { UploadRafflePhotosService } from '../services/upload-raffle-photos.service';
+import { CreateUsersRaffleNumberService } from '@/modules/users-raffle-number/services/create-users-raffle-number.service';
 
 @Controller('raffles')
 export class RaffleController {
   constructor(
     private readonly createRaffleService: CreateRaffleService,
     private readonly queryUsersRaffleNumberService: QueryUsersRaffleNumberService,
+    private readonly createUsersRaffleNumberService: CreateUsersRaffleNumberService,
     private readonly queryRaffleService: QueryRaffleService,
+    private readonly uploadRafflePhotosService: UploadRafflePhotosService,
   ) {}
 
   @Post('create')
@@ -47,6 +60,111 @@ export class RaffleController {
       delete raffle.available_numbers;
     });
     return { ok: true, raffles, total: count };
+  }
+
+  @Post('update/:raffleId')
+  @UseGuards(JwtAuthGuard)
+  async updateRaffle(
+    @Param('raffleId') raffleId: string,
+    @Body() updateRaffleDto: UpdateRaffleDto,
+  ) {
+    const raffle = await this.queryRaffleService.findOneRaffle({
+      where: [{ id: raffleId }],
+    });
+
+    if (!raffle) {
+      throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
+    }
+
+    const updatedRaffle = await this.createRaffleService.updateRaffle(
+      raffleId,
+      updateRaffleDto,
+    );
+    return { ok: true, raffle: updatedRaffle };
+  }
+
+  @Post('upload-photo/:raffleId')
+  @UseInterceptors(FilesInterceptor('photos'))
+  @UseGuards(JwtAuthGuard)
+  async uploadPhoto(
+    @UploadedFiles(ParseImagesPipe, SharpPipe)
+    images: ProcessedImage[],
+    @Param('raffleId') raffleId: string,
+  ) {
+    const raffle = await this.queryRaffleService.findOneRaffle({
+      where: [{ id: raffleId }],
+    });
+
+    if (!raffle) {
+      throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
+    }
+
+    const photos_url =
+      await this.uploadRafflePhotosService.uploadPhotos(images);
+
+    const updatedRaffle = await this.createRaffleService.updateRaffle(
+      raffleId,
+      { photos_url: [...raffle.photos_url, ...photos_url] },
+    );
+    return { ok: true, raffle: updatedRaffle };
+  }
+
+  @Delete('delete-photo/:raffleId')
+  async updatePhoto(
+    @Param('raffleId') raffleId: string,
+    @Body() { photoUrl }: { photoUrl: string },
+  ) {
+    const raffle = await this.queryRaffleService.findOneRaffle({
+      where: [{ id: raffleId }],
+    });
+
+    if (!raffle) {
+      throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
+    }
+
+    const filteredPhotos = raffle.photos_url.filter(
+      (photo) => photo !== photoUrl,
+    );
+
+    const updatedRaffle = await this.createRaffleService.updateRaffle(
+      raffleId,
+      { photos_url: filteredPhotos },
+    );
+
+    await this.uploadRafflePhotosService.deletePhoto(photoUrl);
+    return { ok: true, raffle: updatedRaffle };
+  }
+
+  @Post('finish/:raffleId')
+  async finishRaffle(@Param('raffleId') raffleId: string) {
+    const raffle = await this.queryRaffleService.findOneRaffle({
+      where: [{ id: raffleId }],
+    });
+    if (!raffle) {
+      throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
+    }
+    const { winner: winnerRaffleNumber, giftWinners } =
+      await this.queryRaffleService.getWinners(raffleId);
+
+    if (!winnerRaffleNumber)
+      throw new ApiError('winner-not-found', 'Vencedor não encontrado', 404);
+
+    const updatedRaffle = await this.createRaffleService.updateRaffle(
+      raffleId,
+      {
+        status: RaffleStatus.FINISHED,
+        winner_common_user_id: winnerRaffleNumber?.common_user_id,
+        gift_numbers_winners: giftWinners.map((urn) => {
+          return { ...urn.common_user, number: urn.number };
+        }),
+      },
+    );
+
+    await this.createUsersRaffleNumberService.eraseUserNumbersByRaffleId(
+      raffleId,
+    );
+
+    return { ok: true, raffle: updatedRaffle };
   }
 
   @Get(':raffleId')

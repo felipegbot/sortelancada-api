@@ -1,4 +1,13 @@
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Header,
+  Headers,
+  Param,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { GeneratePaymentDto } from '../dtos/generate-payment.dto';
 import { FindOneCommonUserService } from '@/modules/common-user/services';
 import { CreatePaymentService } from '../services/create-payment.service';
@@ -11,6 +20,7 @@ import { CreateUsersRaffleNumberService } from '@/modules/users-raffle-number/se
 import { QueryPaymentService } from '../services/find-one-payment.service';
 import { PaymentStatus } from '../enums/payment-status.enum';
 import * as AsyncLock from 'async-lock';
+import { ValidateWebhookService } from '../services/validate-payment-webhook.service';
 
 @Controller('payment')
 export class PaymentController {
@@ -21,6 +31,7 @@ export class PaymentController {
     private readonly createPaymentService: CreatePaymentService,
     private readonly createRaffleService: CreateRaffleService,
     private readonly queryPaymentService: QueryPaymentService,
+    private readonly validateWebhookService: ValidateWebhookService,
     private readonly queryRaffleService: QueryRaffleService,
     private readonly createUsersRaffleNumberService: CreateUsersRaffleNumberService,
   ) {
@@ -72,38 +83,48 @@ export class PaymentController {
     console.log('cancelPayment');
   }
 
-  @Post('/confirm-payment/:payment_id')
-  async confirmPayment(@Param('payment_id') paymentId: string) {
+  @Post('/confirm-payment')
+  async confirmPayment(
+    @Headers()
+    {
+      'x-signature': authToken,
+      'x-request-id': requestId,
+    }: { 'x-signature': string; 'x-request-id': string },
+    @Body() body: any,
+    @Query()
+    { 'data.id': mercadopago_id, type }: { 'data.id': string; type: string },
+  ) {
+    if (type !== 'payment') return { ok: true };
+
+    await this.validateWebhookService.validateWebhook(
+      authToken,
+      mercadopago_id,
+      requestId,
+    );
+
     const payment = await this.queryPaymentService.findOne({
-      where: [{ id: paymentId }],
+      where: [{ mercadopago_id }],
     });
 
     if (!payment || payment.status !== PaymentStatus.PENDING)
-      throw new ApiError(
-        'payment-not-found',
-        'Pagamento pendente não encontrado',
-        404,
-      );
-    const { ok, count } = await this.lock.acquire(
-      'generateRaffleNumber',
-      async () => {
-        const { count } =
-          await this.createUsersRaffleNumberService.generateRaffleNumber(
-            payment.raffle_id,
-            payment.raffles_quantity,
-            payment.id,
-            payment.common_user_id,
-          );
+      return { ok: true };
 
-        await this.createPaymentService.updatePaymentStatus(
+    const count = await this.lock.acquire('generateRaffleNumber', async () => {
+      const { count } =
+        await this.createUsersRaffleNumberService.generateRaffleNumber(
+          payment.raffle_id,
+          payment.raffles_quantity,
           payment.id,
-          PaymentStatus.SUCCESS,
+          payment.common_user_id,
         );
-        //TODO: Implementar confirmação de pagamento via webhook
 
-        return { ok: true, count };
-      },
-    );
-    return { ok, count };
+      await this.createPaymentService.updatePaymentStatus(
+        payment.id,
+        PaymentStatus.SUCCESS,
+      );
+
+      return count;
+    });
+    return { ok: true, count };
   }
 }

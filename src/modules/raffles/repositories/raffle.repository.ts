@@ -51,10 +51,7 @@ export class RaffleRepository {
     return { raffles, count };
   }
 
-  async findOne(
-    options: FindOneOptions<Raffle>,
-    withWinners?: boolean,
-  ): Promise<Raffle> {
+  async findOne(options: FindOneOptions<Raffle>): Promise<Raffle> {
     const qb = this.raffleRepository.createQueryBuilder('raffles');
     if (options.relations) {
       options.relations.forEach((relation) =>
@@ -68,7 +65,7 @@ export class RaffleRepository {
         }
       }
     }
-
+    qb.addSelect('raffles.available_numbers');
     const raffle = await qb.getOne();
     return raffle;
   }
@@ -85,11 +82,16 @@ export class RaffleRepository {
       .getRawOne();
 
     // this is a simple array of numbers as string, so we need to split it and convert it to numbers
+    const preFormattedGiftNumber = rawRaffle.raffles_gift_numbers.replace(
+      /\[|\]/g,
+      '',
+    );
+
     const giftNumbers =
-      rawRaffle.raffles_gift_numbers
-        .replace(/\[|\]/g, '')
-        .split(',')
-        .map((n: string) => parseInt(n)) ?? [];
+      preFormattedGiftNumber === ''
+        ? []
+        : preFormattedGiftNumber.split(',').map((n: string) => parseInt(n)) ??
+          [];
 
     const flattenedNumbers = [rawRaffle.raffles_prize_number, ...giftNumbers];
 
@@ -103,10 +105,10 @@ export class RaffleRepository {
     const raffle = await qb.getOne();
 
     return {
-      winner: raffle.users_raffle_number.find(
+      winner: raffle?.users_raffle_number?.find(
         (urn) => urn.number == raffle.prize_number,
       ),
-      giftWinners: raffle.users_raffle_number.filter((urn) =>
+      giftWinners: raffle?.users_raffle_number?.filter((urn) =>
         giftNumbers.includes(urn.number),
       ),
     };

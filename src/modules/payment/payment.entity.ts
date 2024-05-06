@@ -26,8 +26,14 @@ export class Payment {
   @Column({ type: 'enum', enum: PaymentStatus })
   status: PaymentStatus;
 
-  @Column({ nullable: true })
+  @Column()
   pix_code: string;
+
+  @Column()
+  pix_qr_code: string;
+
+  @Column({ unique: true })
+  mercadopago_id: number;
 
   @Column()
   raffle_id: string;
