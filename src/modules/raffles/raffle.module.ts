@@ -5,7 +5,7 @@ import { RaffleRepository } from './repositories/raffle.repository';
 import { RaffleController } from './controllers/raffle.controller';
 import { CreateRaffleService, QueryRaffleService } from './services';
 import { UsersRaffleNumberModule } from '../users-raffle-number/users-raffle-number.module';
-import { UploadRafflePhotosService } from './services/upload-raffle-photos.service';
+import { UploadRaffleMediaService } from './services/upload-raffle-photos.service';
 
 @Module({
   controllers: [RaffleController],
@@ -17,7 +17,7 @@ import { UploadRafflePhotosService } from './services/upload-raffle-photos.servi
     RaffleRepository,
     CreateRaffleService,
     QueryRaffleService,
-    UploadRafflePhotosService,
+    UploadRaffleMediaService,
   ],
   exports: [QueryRaffleService, CreateRaffleService],
 })

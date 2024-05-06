@@ -25,7 +25,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import ParseImagesPipe from '@/common/pipes/parse-image.pipe';
 import { ProcessedImage, SharpPipe } from '@/common/pipes/sharp.pipe';
 import { RaffleStatus } from '../enum/raffle-status.enum';
-import { UploadRafflePhotosService } from '../services/upload-raffle-photos.service';
+import { UploadRaffleMediaService } from '../services/upload-raffle-photos.service';
 import { CreateUsersRaffleNumberService } from '@/modules/users-raffle-number/services/create-users-raffle-number.service';
 
 @Controller('raffles')
@@ -35,7 +35,7 @@ export class RaffleController {
     private readonly queryUsersRaffleNumberService: QueryUsersRaffleNumberService,
     private readonly createUsersRaffleNumberService: CreateUsersRaffleNumberService,
     private readonly queryRaffleService: QueryRaffleService,
-    private readonly uploadRafflePhotosService: UploadRafflePhotosService,
+    private readonly uploadRaffleMediaService: UploadRaffleMediaService,
   ) {}
 
   @Post('create')
@@ -84,11 +84,11 @@ export class RaffleController {
   }
 
   @Post('upload-photo/:raffleId')
-  @UseInterceptors(FilesInterceptor('photos'))
+  @UseInterceptors(FilesInterceptor('medias'))
   @UseGuards(JwtAuthGuard)
   async uploadPhoto(
-    @UploadedFiles(ParseImagesPipe, SharpPipe)
-    images: ProcessedImage[],
+    @UploadedFiles()
+    media: Express.Multer.File[],
     @Param('raffleId') raffleId: string,
   ) {
     const raffle = await this.queryRaffleService.findOneRaffle({
@@ -99,12 +99,11 @@ export class RaffleController {
       throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
     }
 
-    const photos_url =
-      await this.uploadRafflePhotosService.uploadPhotos(images);
+    const medias_url = await this.uploadRaffleMediaService.uploadMedia(media);
 
     const updatedRaffle = await this.createRaffleService.updateRaffle(
       raffleId,
-      { photos_url: [...raffle.photos_url, ...photos_url] },
+      { medias_url: [...raffle.medias_url, ...medias_url] },
     );
     return { ok: true, raffle: updatedRaffle };
   }
@@ -112,7 +111,7 @@ export class RaffleController {
   @Delete('delete-photo/:raffleId')
   async updatePhoto(
     @Param('raffleId') raffleId: string,
-    @Body() { photoUrl }: { photoUrl: string },
+    @Body() { mediaUrl }: { mediaUrl: string },
   ) {
     const raffle = await this.queryRaffleService.findOneRaffle({
       where: [{ id: raffleId }],
@@ -122,16 +121,16 @@ export class RaffleController {
       throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
     }
 
-    const filteredPhotos = raffle.photos_url.filter(
-      (photo) => photo !== photoUrl,
+    const filteredPhotos = raffle.medias_url.filter(
+      (photo) => photo !== mediaUrl,
     );
 
     const updatedRaffle = await this.createRaffleService.updateRaffle(
       raffleId,
-      { photos_url: filteredPhotos },
+      { medias_url: filteredPhotos },
     );
 
-    await this.uploadRafflePhotosService.deletePhoto(photoUrl);
+    await this.uploadRaffleMediaService.deleteMedia(mediaUrl);
     return { ok: true, raffle: updatedRaffle };
   }
 

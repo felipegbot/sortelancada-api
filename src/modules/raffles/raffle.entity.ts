@@ -26,7 +26,7 @@ export class Raffle {
   description: string;
 
   @Column({ type: 'simple-array', default: '' })
-  photos_url: string[];
+  medias_url: string[];
 
   @Column()
   prize_name: string;
