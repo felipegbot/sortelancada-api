@@ -21,9 +21,8 @@ export class ValidateWebhookService {
 
     const hash = createHmac('sha256', ourToken).update(template).digest('hex');
 
-    console.log(await tsse(hash, token));
-
     const isSignatureValid = await tsse(hash, token);
+    console.log(isSignatureValid);
     if (!isSignatureValid)
       throw new ApiError('invalid-signature', 'Assinatura inválida', 400);
 

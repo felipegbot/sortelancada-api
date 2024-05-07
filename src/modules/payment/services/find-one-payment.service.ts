@@ -10,4 +10,8 @@ export class QueryPaymentService {
   async findOne(options: FindOneOptions<Payment>): Promise<Payment> {
     return this.paymentRepository.findOne(options);
   }
+
+  async getUnvalidatedPayments(): Promise<Payment[]> {
+    return await this.paymentRepository.getUnvalidatedPayments();
+  }
 }

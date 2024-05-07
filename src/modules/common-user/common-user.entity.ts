@@ -34,12 +34,12 @@ export class CommonUser {
   )
   raffles_numbers_bought: UsersRaffleNumber[];
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({ type: 'timestamptz', select: false })
   created_at: Date;
 
-  @UpdateDateColumn({ select: false })
+  @UpdateDateColumn({ type: 'timestamptz', select: false })
   updated_at: Date;
 
-  @DeleteDateColumn({ select: false })
+  @DeleteDateColumn({ type: 'timestamptz', select: false })
   deleted_at: Date;
 }

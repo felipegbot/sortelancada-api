@@ -74,12 +74,12 @@ export class Raffle {
   @JoinColumn({ name: 'winner_common_user_id' })
   winner_common_user: CommonUser;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 
-  @DeleteDateColumn({ select: false })
+  @DeleteDateColumn({ type: 'timestamptz', select: false })
   deleted_at: Date;
 }

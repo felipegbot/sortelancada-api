@@ -35,6 +35,14 @@ export class PaymentRepository {
     return qb.getOne();
   }
 
+  async getUnvalidatedPayments(): Promise<Payment[]> {
+    const qb = this.paymentRepository.createQueryBuilder('payments');
+    qb.where('payments.expires_at < :now', { now: new Date() });
+    qb.andWhere('payments.status = :status', { status: PaymentStatus.PENDING });
+
+    return qb.getMany();
+  }
+
   async updatePaymentStatus(
     id: string,
     status: PaymentStatus,

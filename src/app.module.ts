@@ -8,11 +8,13 @@ import { CommonUserModule } from './modules/common-user/common-user.module';
 import { RaffleModule } from './modules/raffles/raffle.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { UsersRaffleNumberModule } from './modules/users-raffle-number/users-raffle-number.module';
+import { ScheduleModule } from '@nestjs/schedule';
 config();
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    ScheduleModule.forRoot(),
 
     TypeOrmModule.forRoot({
       type: 'postgres',

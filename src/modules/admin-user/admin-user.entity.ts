@@ -26,12 +26,12 @@ export class AdminUser {
   @OneToMany(() => Raffle, (raffle) => raffle.adminUser)
   raffles: Raffle[];
 
-  @CreateDateColumn({ select: false })
+  @CreateDateColumn({ type: 'timestamptz', select: false })
   created_at: Date;
 
-  @UpdateDateColumn({ select: false })
+  @UpdateDateColumn({ type: 'timestamptz', select: false })
   updated_at: Date;
 
-  @DeleteDateColumn({ select: false })
+  @DeleteDateColumn({ type: 'timestamptz', select: false })
   deleted_at: Date;
 }

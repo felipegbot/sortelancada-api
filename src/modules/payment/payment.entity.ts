@@ -17,7 +17,7 @@ export class Payment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ type: 'float' })
   value: number;
 
   @Column()
@@ -26,14 +26,14 @@ export class Payment {
   @Column({ type: 'enum', enum: PaymentStatus })
   status: PaymentStatus;
 
-  @Column()
+  @Column({ nullable: true })
   pix_code: string;
 
-  @Column()
+  @Column({ nullable: true })
   pix_qr_code: string;
 
-  @Column({ unique: true })
-  mercadopago_id: number;
+  @Column({ unique: true, nullable: true })
+  mercadopago_id: string;
 
   @Column()
   raffle_id: string;
@@ -41,8 +41,11 @@ export class Payment {
   @Column()
   common_user_id: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   paid_at: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  expires_at: Date;
 
   @OneToMany(() => UsersRaffleNumber, (urNumber) => urNumber.payment)
   users_raffle_number: UsersRaffleNumber[];
@@ -51,9 +54,9 @@ export class Payment {
   @JoinColumn({ name: 'common_user_id' })
   commonUser: CommonUser;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 }

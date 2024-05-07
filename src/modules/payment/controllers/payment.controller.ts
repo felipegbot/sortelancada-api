@@ -3,10 +3,12 @@ import {
   Controller,
   Header,
   Headers,
+  Logger,
   Param,
   Post,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { GeneratePaymentDto } from '../dtos/generate-payment.dto';
 import { FindOneCommonUserService } from '@/modules/common-user/services';
@@ -21,11 +23,13 @@ import { QueryPaymentService } from '../services/find-one-payment.service';
 import { PaymentStatus } from '../enums/payment-status.enum';
 import * as AsyncLock from 'async-lock';
 import { ValidateWebhookService } from '../services/validate-payment-webhook.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
 @Controller('payment')
 export class PaymentController {
   private lock: AsyncLock;
-
+  private logger: Logger;
   constructor(
     private readonly findOneCommonUserService: FindOneCommonUserService,
     private readonly createPaymentService: CreatePaymentService,
@@ -36,6 +40,7 @@ export class PaymentController {
     private readonly createUsersRaffleNumberService: CreateUsersRaffleNumberService,
   ) {
     this.lock = new AsyncLock();
+    this.logger = new Logger(PaymentController.name);
   }
 
   @Post('/generate-payment')
@@ -77,10 +82,12 @@ export class PaymentController {
     return { ok: true, payment };
   }
 
-  @Post('/cancel-payment/:payment_id')
-  async cancelPayment() {
-    // TODO: implementar cancelamento de pagamento via webhook, e atualizar a quantidade de números disponíveis
-    console.log('cancelPayment');
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleCron() {
+    console.log('removing unvalidated payments');
+    const unvalidatedPayments =
+      await this.queryPaymentService.getUnvalidatedPayments();
+    console.log(unvalidatedPayments);
   }
 
   @Post('/confirm-payment')
@@ -90,17 +97,21 @@ export class PaymentController {
       'x-signature': authToken,
       'x-request-id': requestId,
     }: { 'x-signature': string; 'x-request-id': string },
-    @Body() body: any,
+    @Body() { action }: { action: string },
     @Query()
     { 'data.id': mercadopago_id, type }: { 'data.id': string; type: string },
   ) {
-    if (type !== 'payment') return { ok: true };
+    if (type !== 'payment' || action.split('.')[1] !== 'updated')
+      return { ok: true };
 
-    await this.validateWebhookService.validateWebhook(
+    const isValid = await this.validateWebhookService.validateWebhook(
       authToken,
       mercadopago_id,
       requestId,
     );
+
+    if (!isValid)
+      throw new ApiError('invalid-signature', 'Assinatura inválida', 400);
 
     const payment = await this.queryPaymentService.findOne({
       where: [{ mercadopago_id }],
@@ -109,7 +120,7 @@ export class PaymentController {
     if (!payment || payment.status !== PaymentStatus.PENDING)
       return { ok: true };
 
-    const count = await this.lock.acquire('generateRaffleNumber', async () => {
+    await this.lock.acquire('generateRaffleNumber', async () => {
       const { count } =
         await this.createUsersRaffleNumberService.generateRaffleNumber(
           payment.raffle_id,
@@ -123,8 +134,40 @@ export class PaymentController {
         PaymentStatus.SUCCESS,
       );
 
-      return count;
+      this.logger.log(
+        `Generated ${count} raffle numbers for payment ${payment.id}`,
+      );
     });
-    return { ok: true, count };
+    return { ok: true };
+  }
+
+  @Post('force-confirm-payment/:paymentId')
+  @UseGuards(JwtAuthGuard)
+  async forceConfirmPayment(@Param('paymentId') paymentId: string) {
+    const payment = await this.queryPaymentService.findOne({
+      where: [{ id: paymentId }],
+    });
+    if (!payment) return { ok: true, message: 'Pagamento não encontrado' };
+
+    if (payment.status !== PaymentStatus.PENDING)
+      return { ok: true, message: 'Pagamento não está como pendente' };
+
+    await this.lock.acquire('generateRaffleNumber', async () => {
+      const { count } =
+        await this.createUsersRaffleNumberService.generateRaffleNumber(
+          payment.raffle_id,
+          payment.raffles_quantity,
+          payment.id,
+          payment.common_user_id,
+        );
+      await this.createPaymentService.updatePaymentStatus(
+        payment.id,
+        PaymentStatus.SUCCESS,
+      );
+      this.logger.log(
+        `Generated ${count} raffle numbers for payment ${payment.id}`,
+      );
+    });
+    return { ok: true };
   }
 }

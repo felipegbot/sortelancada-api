@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { MercadoPagoPixRequest } from './interfaces/pix-request.interface';
 import { MercadoPagoPixResponse } from './interfaces/pix-response.interface';
-import moment from '../libs/moment';
 
 const MercadoPagoApi = axios.create({
   baseURL: 'https://api.mercadopago.com',
@@ -19,13 +18,13 @@ const createPixPayment = async (
       payer: {
         email: pixPaymentData.email,
       },
-      date_of_expiration: moment().add(30, 'minutes').toISOString(),
+      date_of_expiration: pixPaymentData.date_of_expiration,
+      notification_url: `${process.env.MERCADOPAGO_WEBHOOK_URL}/payment/confirm-payment`,
     },
     {
       headers: { 'X-Idempotency-Key': pixPaymentData.internal_payment_id },
     },
   );
-  console.log(data);
   return data as MercadoPagoPixResponse;
 };
 
