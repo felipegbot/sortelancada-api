@@ -68,4 +68,8 @@ export class PaymentRepository {
     const paymentDb = await this.paymentRepository.save(payment);
     return paymentDb;
   }
+
+  async removePayments(payments: Payment[]) {
+    return this.paymentRepository.remove(payments);
+  }
 }

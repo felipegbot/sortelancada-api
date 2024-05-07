@@ -4,4 +4,5 @@ export type ListOptions<T> = {
   page?: number;
   per_page?: number;
   name?: string;
+  ids?: string[];
 };

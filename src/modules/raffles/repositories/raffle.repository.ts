@@ -38,6 +38,10 @@ export class RaffleRepository {
       }
     }
 
+    if (options.ids) {
+      qb.andWhereInIds(options.ids);
+    }
+
     if (options.relations) {
       options.relations.forEach((relation) =>
         qb.leftJoinAndSelect(`raffles.${relation}`, relation),

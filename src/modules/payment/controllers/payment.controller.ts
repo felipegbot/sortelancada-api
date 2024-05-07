@@ -25,6 +25,7 @@ import * as AsyncLock from 'async-lock';
 import { ValidateWebhookService } from '../services/validate-payment-webhook.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { RaffleStatus } from '@/modules/raffles/enum/raffle-status.enum';
 
 @Controller('payment')
 export class PaymentController {
@@ -57,11 +58,17 @@ export class PaymentController {
         'Usuário não encontrado com esse telefone',
         404,
       );
+
     const raffle = await this.queryRaffleService.findOneRaffle({
-      where: [{ id: generatePaymentDto.raffle_id }],
+      where: [{ id: generatePaymentDto.raffle_id, status: RaffleStatus.OPEN }],
     });
+
     if (!raffle)
-      throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
+      throw new ApiError(
+        'raffle-not-found',
+        'Rifa não encontrada ou já foi finalizada',
+        404,
+      );
     if (raffle.available_numbers_qtd < generatePaymentDto.amount) {
       throw new ApiError(
         'invalid-amount',
@@ -82,12 +89,45 @@ export class PaymentController {
     return { ok: true, payment };
   }
 
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_30_MINUTES)
   async handleCron() {
-    console.log('removing unvalidated payments');
+    this.logger.log('Running cron job');
     const unvalidatedPayments =
       await this.queryPaymentService.getUnvalidatedPayments();
-    console.log(unvalidatedPayments);
+
+    const ids = Array.from(
+      new Set(unvalidatedPayments.map((payment) => payment.raffle_id)),
+    );
+
+    const { raffles } = await this.queryRaffleService.queryRaffle({ ids });
+
+    let rafflesWithItsAvailableNumbers = raffles.map((raffle) => {
+      return {
+        id: raffle.id,
+        status: raffle.status,
+        available_numbers_qtd: raffle.available_numbers_qtd,
+      };
+    });
+
+    unvalidatedPayments.forEach((payment) => {
+      rafflesWithItsAvailableNumbers.find((r) => r.id == payment.raffle_id)
+        .status === RaffleStatus.OPEN
+        ? (rafflesWithItsAvailableNumbers.find(
+            (r) => r.id == payment.raffle_id,
+          ).available_numbers_qtd += payment.raffles_quantity)
+        : null;
+    });
+
+    for (const raffle of rafflesWithItsAvailableNumbers) {
+      await this.createRaffleService.updateRaffle(raffle.id, {
+        available_numbers_qtd: raffle.available_numbers_qtd,
+      });
+    }
+    await this.createPaymentService.removePayments(unvalidatedPayments);
+    this.logger.log(
+      'Finished cron job',
+      `Removed ${unvalidatedPayments.length} payments`,
+    );
   }
 
   @Post('/confirm-payment')

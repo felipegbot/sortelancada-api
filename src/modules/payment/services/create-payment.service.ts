@@ -73,4 +73,8 @@ export class CreatePaymentService {
   ): Promise<Payment> {
     return this.paymentRepository.updatePaymentStatus(id, status);
   }
+
+  async removePayments(payments: Payment[]) {
+    return this.paymentRepository.removePayments(payments);
+  }
 }
