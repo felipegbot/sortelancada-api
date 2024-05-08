@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UsersRaffleNumber } from '../users-raffle-number.entity';
 import { DataSource, Repository } from 'typeorm';
 import { CommonUser } from '@/modules/common-user/common-user.entity';
-import { RaffleRepository } from '@/modules/raffles/repositories/raffle.repository';
 import {
   CreateRaffleService,
   QueryRaffleService,
 } from '@/modules/raffles/services';
 import ApiError from '@/common/error/entities/api-error.entity';
+import { ListOptions } from '@/common/types/list-options.type';
 
 @Injectable()
 export class UsersRaffleNumberRepository {
@@ -81,13 +81,34 @@ export class UsersRaffleNumberRepository {
     }
   }
 
-  async eraseUserNumbersByRaffleId(raffleId: string): Promise<{ ok: boolean }> {
-    const qb = this.usersRaffleNumberRepository.createQueryBuilder('urn');
-    qb.where('urn.raffle_id = :raffleId', { raffleId });
-    qb.softDelete();
-    console.log(qb.getSql());
-    await qb.execute();
+  async deleteUsersRaffleNumberByRaffleId(
+    raffleId: string,
+  ): Promise<{ ok: boolean }> {
+    await this.usersRaffleNumberRepository.delete({ raffle_id: raffleId });
     return { ok: true };
+  }
+
+  async list(
+    options: ListOptions<UsersRaffleNumber>,
+  ): Promise<{ urns: UsersRaffleNumber[]; count: number }> {
+    const qb = this.usersRaffleNumberRepository.createQueryBuilder('urn');
+    if (options.where) {
+      for (const where of options.where) {
+        for (const [key, value] of Object.entries(where)) {
+          qb.andWhere(`urn.${key} = :${key}`, { [key]: value });
+        }
+      }
+    }
+
+    if (options.relations) {
+      options.relations.forEach((relation) =>
+        qb.leftJoinAndSelect(`urn.${relation}`, relation),
+      );
+    }
+
+    const [urns, count] = await qb.getManyAndCount();
+
+    return { urns, count };
   }
 
   async getTopBuyers(raffleId: number): Promise<

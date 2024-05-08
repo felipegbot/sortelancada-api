@@ -18,7 +18,6 @@ export class UsersRaffleNumberController {
       where: [{ phone: formattedPhone }],
       relations: ['raffles_numbers_bought'],
     });
-    console.log(raffleId, formattedPhone);
     user.raffles_numbers_bought = user.raffles_numbers_bought.filter(
       (raffleNumber) => raffleNumber.raffle_id == raffleId,
     );

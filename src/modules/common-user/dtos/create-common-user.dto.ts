@@ -1,5 +1,4 @@
-import { IsNotEmpty, IsString, Validate } from 'class-validator';
-import isValidPhone from '@brazilian-utils/is-valid-phone';
+import { IsNotEmpty, IsPhoneNumber, IsString } from 'class-validator';
 
 export class CreateCommonUserDto {
   @IsNotEmpty({
@@ -28,9 +27,6 @@ export class CreateCommonUserDto {
       userMessage: `Telefone inválido`,
     },
   })
-  @Validate((o: CreateCommonUserDto) => {
-    console.log(o);
-    return isValidPhone(o.phone);
-  })
+  @IsPhoneNumber('BR')
   phone: string;
 }

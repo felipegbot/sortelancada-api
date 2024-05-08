@@ -40,13 +40,13 @@ export class Raffle {
   @Column({ type: 'simple-array', nullable: true, default: '' })
   gift_numbers: number[];
 
-  @Column({ type: 'simple-array', nullable: true, default: '' })
-  gift_numbers_winners: (CommonUser & { number: number })[];
+  @Column({ type: 'simple-json', nullable: true })
+  gift_numbers_winners: string;
 
   @Column({ type: 'simple-array', default: [], select: false })
   available_numbers: number[];
 
-  @Column()
+  @Column({ select: false })
   available_numbers_qtd: number;
 
   @Column()

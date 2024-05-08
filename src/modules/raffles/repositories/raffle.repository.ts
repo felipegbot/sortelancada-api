@@ -57,11 +57,6 @@ export class RaffleRepository {
 
   async findOne(options: FindOneOptions<Raffle>): Promise<Raffle> {
     const qb = this.raffleRepository.createQueryBuilder('raffles');
-    if (options.relations) {
-      options.relations.forEach((relation) =>
-        qb.leftJoinAndSelect(`raffles.${relation}`, relation),
-      );
-    }
     if (options.where) {
       for (const where of options.where) {
         for (const [key, value] of Object.entries(where)) {
@@ -69,7 +64,12 @@ export class RaffleRepository {
         }
       }
     }
-    qb.addSelect('raffles.available_numbers');
+    if (options.relations) {
+      options.relations.forEach((relation) =>
+        qb.leftJoinAndSelect(`raffles.${relation}`, relation),
+      );
+    }
+    qb.addSelect('raffles.available_numbers_qtd');
     const raffle = await qb.getOne();
     return raffle;
   }
@@ -96,7 +96,12 @@ export class RaffleRepository {
         ? []
         : preFormattedGiftNumber.split(',').map((n: string) => parseInt(n)) ??
           [];
-
+    if (!rawRaffle.raffles_prize_number)
+      throw new ApiError(
+        'raffle-didnt-has-prize-number',
+        'Rifa não possui número premiado',
+        400,
+      );
     const flattenedNumbers = [rawRaffle.raffles_prize_number, ...giftNumbers];
 
     qb.leftJoinAndSelect('raffles.users_raffle_number', 'users_raffle_number');

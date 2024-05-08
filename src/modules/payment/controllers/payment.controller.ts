@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Header,
   Headers,
   Logger,
@@ -42,6 +43,33 @@ export class PaymentController {
   ) {
     this.lock = new AsyncLock();
     this.logger = new Logger(PaymentController.name);
+  }
+
+  @Get('payments-by-user-phone/:userPhone')
+  async getPaymentsByUserPhone(@Param('userPhone') userPhone: string) {
+    const formattedUserPhone = userPhone.replace(/\D/g, '');
+    const commonUser = await this.findOneCommonUserService.findOne({
+      where: [{ phone: formattedUserPhone }],
+      relations: ['payments'],
+    });
+    if (!commonUser)
+      throw new ApiError(
+        'common-user-not-found',
+        'Usuário não encontrado para este telefone',
+        404,
+      );
+
+    return { ok: true, payments: commonUser.payments };
+  }
+
+  @Get('find-one/:paymentId')
+  async findOnePayment(@Param('paymentId') paymentId: string) {
+    const payment = await this.queryPaymentService.findOne({
+      where: [{ id: paymentId }],
+    });
+    if (!payment)
+      throw new ApiError('payment-not-found', 'Pagamento não encontrado', 400);
+    return { ok: true, payment };
   }
 
   @Post('/generate-payment')
@@ -89,7 +117,7 @@ export class PaymentController {
     return { ok: true, payment };
   }
 
-  @Cron(CronExpression.EVERY_30_MINUTES)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async handleCron() {
     this.logger.log('Running cron job');
     const unvalidatedPayments =

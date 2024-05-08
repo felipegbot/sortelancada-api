@@ -22,11 +22,10 @@ import { QueryUsersRaffleNumberService } from '@/modules/users-raffle-number/ser
 import ApiError from '@/common/error/entities/api-error.entity';
 import { UpdateRaffleDto } from '../dtos/update-raffle.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import ParseImagesPipe from '@/common/pipes/parse-image.pipe';
-import { ProcessedImage, SharpPipe } from '@/common/pipes/sharp.pipe';
 import { RaffleStatus } from '../enum/raffle-status.enum';
 import { UploadRaffleMediaService } from '../services/upload-raffle-photos.service';
 import { CreateUsersRaffleNumberService } from '@/modules/users-raffle-number/services/create-users-raffle-number.service';
+import { CreateOldUsersRaffleNumberService } from '@/modules/old-users-raffle-number/services/create-old-users-raffle-number.service';
 
 @Controller('raffles')
 export class RaffleController {
@@ -36,6 +35,7 @@ export class RaffleController {
     private readonly createUsersRaffleNumberService: CreateUsersRaffleNumberService,
     private readonly queryRaffleService: QueryRaffleService,
     private readonly uploadRaffleMediaService: UploadRaffleMediaService,
+    private readonly createOldUsersRaffleNumberService: CreateOldUsersRaffleNumberService,
   ) {}
 
   @Post('create')
@@ -139,9 +139,15 @@ export class RaffleController {
     const raffle = await this.queryRaffleService.findOneRaffle({
       where: [{ id: raffleId }],
     });
+    const { urns } =
+      await this.queryUsersRaffleNumberService.listUsersRaffleNumber({
+        where: [{ raffle_id: raffleId }],
+      });
+
     if (!raffle) {
       throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
     }
+
     const { winner: winnerRaffleNumber, giftWinners } =
       await this.queryRaffleService.getWinners(raffleId);
 
@@ -153,13 +159,17 @@ export class RaffleController {
       {
         status: RaffleStatus.FINISHED,
         winner_common_user_id: winnerRaffleNumber?.common_user_id,
-        gift_numbers_winners: giftWinners.map((urn) => {
-          return { ...urn.common_user, number: urn.number };
-        }),
+        gift_numbers_winners: JSON.stringify(
+          giftWinners.map((urn) => {
+            return { ...urn.common_user, number: urn.number };
+          }),
+        ),
       },
     );
 
-    await this.createUsersRaffleNumberService.eraseUserNumbersByRaffleId(
+    await this.createOldUsersRaffleNumberService.insertAll(urns);
+
+    await this.createUsersRaffleNumberService.deleteUsersRaffleNumberByRaffleId(
       raffleId,
     );
 
@@ -171,7 +181,10 @@ export class RaffleController {
     const raffle = await this.queryRaffleService.findOneRaffle({
       where: [{ id: raffleId }],
     });
-    return { ok: true, raffle };
+    const { initial_numbers_qtd, available_numbers_qtd } = raffle;
+    const percentage = (available_numbers_qtd / initial_numbers_qtd) * 100;
+    delete raffle.available_numbers_qtd;
+    return { ok: true, raffle, percentage };
   }
 
   @Get('winners/:raffleId')

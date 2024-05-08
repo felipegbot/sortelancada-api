@@ -2,10 +2,9 @@ import {
   IsEmail,
   IsNotEmpty,
   IsNumber,
+  IsPhoneNumber,
   IsString,
-  Validate,
 } from 'class-validator';
-import isValidPhone from '@brazilian-utils/is-valid-phone';
 
 export class GeneratePaymentDto {
   @IsNotEmpty({
@@ -17,7 +16,7 @@ export class GeneratePaymentDto {
   @IsString({
     context: { userMessage: 'invalid-phone', message: 'Telefone inválido' },
   })
-  @Validate((obj: GeneratePaymentDto) => isValidPhone(obj.phone))
+  @IsPhoneNumber('BR')
   phone: string;
 
   @IsNotEmpty({
@@ -53,16 +52,4 @@ export class GeneratePaymentDto {
     },
   )
   raffle_id: number;
-
-  @IsNotEmpty({
-    context: {
-      message: 'missing-email',
-      userMessage: 'E-mail não informado',
-    },
-  })
-  @IsEmail(
-    {},
-    { context: { message: 'invalid-email', userMessage: 'E-mail inválido' } },
-  )
-  email: string;
 }

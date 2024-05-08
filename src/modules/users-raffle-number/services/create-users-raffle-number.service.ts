@@ -3,6 +3,7 @@ import { UsersRaffleNumberRepository } from '../repositories/users-raffle-number
 import { FindOneCommonUserService } from '@/modules/common-user/services';
 import ApiError from '@/common/error/entities/api-error.entity';
 import { QueryRaffleService } from '@/modules/raffles/services';
+import { UsersRaffleNumber } from '../users-raffle-number.entity';
 
 @Injectable()
 export class CreateUsersRaffleNumberService {
@@ -42,8 +43,8 @@ export class CreateUsersRaffleNumberService {
     );
   }
 
-  async eraseUserNumbersByRaffleId(raffleId: string) {
-    return await this.usersRaffleNumberRepository.eraseUserNumbersByRaffleId(
+  async deleteUsersRaffleNumberByRaffleId(raffleId: string) {
+    return await this.usersRaffleNumberRepository.deleteUsersRaffleNumberByRaffleId(
       raffleId,
     );
   }

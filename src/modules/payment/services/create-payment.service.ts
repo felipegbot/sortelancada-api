@@ -28,8 +28,7 @@ export class CreatePaymentService {
 
     // TODO: Implementar cálculo de descontos customizados
     try {
-      const date_of_expiration = moment().add(30, 'minutes');
-      console.log(date_of_expiration.toISOString());
+      const date_of_expiration = moment().add(10, 'minutes');
       const payment = new Payment();
       payment.raffles_quantity = generatePaymentDto.amount;
       payment.raffle_id = `${generatePaymentDto.raffle_id}`;
@@ -40,8 +39,11 @@ export class CreatePaymentService {
       const paymentDb = await this.paymentRepository.createPayment(payment);
 
       const { id, point_of_interaction } = await createPixPayment({
+        user_id: user.id,
+        user_phone: user.phone,
+        payment_id: paymentDb.id,
+        users_raffle_amount: generatePaymentDto.amount,
         transaction_amount: paymentDb.value,
-        email: generatePaymentDto.email,
         internal_payment_id: paymentDb.id,
         date_of_expiration: date_of_expiration.toISOString(),
       });
