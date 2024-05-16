@@ -17,7 +17,6 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { AdminUser } from '@/modules/admin-user/admin-user.entity';
 import { QueryRaffleService } from '../services/query-raffle.service';
-import { PaginationDto } from '@/common/dtos/pagination.dto';
 import { QueryUsersRaffleNumberService } from '@/modules/users-raffle-number/services/query-users-raffle-number.service';
 import ApiError from '@/common/error/entities/api-error.entity';
 import { UpdateRaffleDto } from '../dtos/update-raffle.dto';
@@ -26,6 +25,9 @@ import { RaffleStatus } from '../enum/raffle-status.enum';
 import { UploadRaffleMediaService } from '../services/upload-raffle-photos.service';
 import { CreateUsersRaffleNumberService } from '@/modules/users-raffle-number/services/create-users-raffle-number.service';
 import { CreateOldUsersRaffleNumberService } from '@/modules/old-users-raffle-number/services/create-old-users-raffle-number.service';
+import { ListRaffleDto } from '../dtos/list-raffle.dto';
+import { ListOptions } from '@/common/types/list-options.type';
+import { Raffle } from '../raffle.entity';
 
 @Controller('raffles')
 export class RaffleController {
@@ -54,8 +56,16 @@ export class RaffleController {
   }
 
   @Get('list')
-  async listRaffle(@Query() query: PaginationDto) {
-    const { raffles, count } = await this.queryRaffleService.queryRaffle(query);
+  async listRaffle(@Query() query: ListRaffleDto) {
+    const queryOptions: ListOptions<Raffle> = {
+      ...query,
+      relations: ['winner_common_user'],
+    };
+
+    if (query.status) queryOptions.where = [{ status: query.status }];
+
+    const { raffles, count } =
+      await this.queryRaffleService.queryRaffle(queryOptions);
     raffles.forEach((raffle) => {
       delete raffle.available_numbers;
     });
@@ -104,6 +114,37 @@ export class RaffleController {
     const updatedRaffle = await this.createRaffleService.updateRaffle(
       raffleId,
       { medias_url: [...raffle.medias_url, ...medias_url] },
+    );
+    return { ok: true, raffle: updatedRaffle };
+  }
+
+  @Post('update-cover/:raffleId')
+  @UseInterceptors(FilesInterceptor('cover'))
+  @UseGuards(JwtAuthGuard)
+  async updateCover(
+    @UploadedFiles() cover: Express.Multer.File[],
+    @Param('raffleId') raffleId: string,
+  ) {
+    const raffle = await this.queryRaffleService.findOneRaffle({
+      where: [{ id: raffleId }],
+    });
+    if (!raffle) {
+      throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
+    }
+    if (!cover[0]) {
+      throw new ApiError('invalid-cover', 'Capa inválida', 400);
+    }
+
+    const cover_url = await this.uploadRaffleMediaService.uploadMedia([
+      cover[0],
+    ]);
+
+    if (raffle.cover_url)
+      await this.uploadRaffleMediaService.deleteMedia(raffle.cover_url);
+
+    const updatedRaffle = await this.createRaffleService.updateRaffle(
+      raffleId,
+      { cover_url: cover_url[0] },
     );
     return { ok: true, raffle: updatedRaffle };
   }

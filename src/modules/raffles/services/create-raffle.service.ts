@@ -20,7 +20,7 @@ export class CreateRaffleService {
     raffle.description = createRaffleDto.description;
     raffle.prize_name = createRaffleDto.prize_name;
     raffle.price_number = createRaffleDto.price_number;
-
+    raffle.min_quantity = createRaffleDto.min_quantity;
     raffle.status = RaffleStatus.OPEN;
     raffle.admin_user_id = adminUser.id;
 

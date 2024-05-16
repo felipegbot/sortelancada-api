@@ -1,7 +1,6 @@
 import { Body, Controller, Logger, Post } from '@nestjs/common';
 import { CreateCommonUserDto } from '../dtos/create-common-user.dto';
 import { CreateCommonUserService, FindOneCommonUserService } from '../services';
-import { CommonUser } from '../common-user.entity';
 
 @Controller('common-user')
 export class CommonUserController {
@@ -11,7 +10,7 @@ export class CommonUserController {
   ) {}
   logger = new Logger(CommonUserController.name);
 
-  @Post('create-or-update')
+  @Post('create-or-return')
   async createUser(@Body() createCommonUserDto: CreateCommonUserDto) {
     const { phone } = createCommonUserDto;
     const formattedPhone = phone.replace(/\D/g, '');
@@ -20,14 +19,9 @@ export class CommonUserController {
       where: [{ phone: formattedPhone }],
     });
 
-    let user: CommonUser;
+    if (alreadyExists) return { ok: true, user: alreadyExists };
 
-    user = alreadyExists
-      ? await this.createOneCommonUser.updateUser(alreadyExists.id, {
-          name: createCommonUserDto.name,
-        })
-      : await this.createOneCommonUser.createUser(createCommonUserDto);
-
+    const user = await this.createOneCommonUser.createUser(createCommonUserDto);
     return { ok: true, user };
   }
 }

@@ -28,6 +28,9 @@ export class Raffle {
   @Column({ type: 'simple-array', default: '' })
   medias_url: string[];
 
+  @Column({ nullable: true })
+  cover_url: string;
+
   @Column()
   prize_name: string;
 
@@ -51,6 +54,9 @@ export class Raffle {
 
   @Column()
   initial_numbers_qtd: number;
+
+  @Column()
+  min_quantity: number;
 
   @Column({ type: 'float' })
   price_number: number;

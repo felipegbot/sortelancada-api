@@ -51,6 +51,18 @@ export class CreateRaffleDto {
     {},
     {
       context: {
+        message: 'invalid-min_quantity',
+        userMessage: 'Quantidade mínima inválida',
+      },
+    },
+  )
+  min_quantity: number;
+
+  @IsNotEmpty()
+  @IsNumber(
+    {},
+    {
+      context: {
         message: 'invalid-price_number',
         userMessage: 'Preço por número inválido',
       },

@@ -48,6 +48,8 @@ export class RaffleRepository {
       );
     }
 
+    qb.orderBy('raffles.created_at', 'DESC');
+
     qb.skip((page - 1) * per_page);
     qb.take(per_page);
 

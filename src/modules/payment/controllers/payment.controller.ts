@@ -105,6 +105,14 @@ export class PaymentController {
       );
     }
 
+    if (generatePaymentDto.amount < raffle.min_quantity) {
+      throw new ApiError(
+        'invalid-amount',
+        'Quantidade de números abaixo do mínimo',
+        400,
+      );
+    }
+
     const payment = await this.createPaymentService.createPayment(
       generatePaymentDto,
       commonUser,
