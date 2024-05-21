@@ -36,6 +36,7 @@ export class UsersRaffleNumberRepository {
 
     const raffle = await this.queryRaffleService.findOneRaffle({
       where: [{ id: raffleId }],
+      additionalSelects: ['available_numbers', 'available_numbers_qtd'],
     });
 
     let { available_numbers } = raffle;

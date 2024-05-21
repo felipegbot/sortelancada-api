@@ -34,6 +34,16 @@ export class CommonUserRepository {
       }
     }
 
+    if (options.with_users_raffle_number) {
+      if (!options.relations.includes('payments')) {
+        qb.leftJoinAndSelect('common_users.payments', 'payments');
+      }
+      qb.leftJoinAndSelect(
+        'payments.users_raffle_number',
+        'users_raffle_number',
+      );
+    }
+
     const commonUser = await qb.getOne();
     return commonUser;
   }

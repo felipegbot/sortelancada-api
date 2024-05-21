@@ -41,7 +41,11 @@ export class RaffleRepository {
     if (options.ids) {
       qb.andWhereInIds(options.ids);
     }
-
+    if (options.additionalSelects) {
+      for (const additionalSelect of options.additionalSelects) {
+        qb.addSelect(`raffles.${additionalSelect}`);
+      }
+    }
     if (options.relations) {
       options.relations.forEach((relation) =>
         qb.leftJoinAndSelect(`raffles.${relation}`, relation),
@@ -64,6 +68,11 @@ export class RaffleRepository {
         for (const [key, value] of Object.entries(where)) {
           qb.andWhere(`raffles.${key} = :${key}`, { [key]: value });
         }
+      }
+    }
+    if (options.additionalSelects) {
+      for (const additionalSelect of options.additionalSelects) {
+        qb.addSelect(`raffles.${additionalSelect}`);
       }
     }
     if (options.relations) {

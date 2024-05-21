@@ -51,6 +51,7 @@ export class PaymentController {
     const commonUser = await this.findOneCommonUserService.findOne({
       where: [{ phone: formattedUserPhone }],
       relations: ['payments'],
+      with_users_raffle_number: true,
     });
     if (!commonUser)
       throw new ApiError(
@@ -122,10 +123,11 @@ export class PaymentController {
       available_numbers_qtd:
         raffle.available_numbers_qtd - generatePaymentDto.amount,
     });
+    delete payment.mercadopago_id;
     return { ok: true, payment };
   }
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
+  // @Cron(CronExpression.EVERY_10_MINUTES)
   async handleCron() {
     this.logger.log('Running cron job');
     const unvalidatedPayments =
@@ -134,9 +136,10 @@ export class PaymentController {
     const ids = Array.from(
       new Set(unvalidatedPayments.map((payment) => payment.raffle_id)),
     );
-
-    const { raffles } = await this.queryRaffleService.queryRaffle({ ids });
-
+    const { raffles } = await this.queryRaffleService.queryRaffle({
+      ids,
+      additionalSelects: ['id', 'status', 'available_numbers_qtd'],
+    });
     let rafflesWithItsAvailableNumbers = raffles.map((raffle) => {
       return {
         id: raffle.id,
@@ -191,6 +194,7 @@ export class PaymentController {
 
     const payment = await this.queryPaymentService.findOne({
       where: [{ mercadopago_id }],
+      additionalSelects: ['mercadopago_id'],
     });
 
     if (!payment || payment.status !== PaymentStatus.PENDING)

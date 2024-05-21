@@ -32,6 +32,11 @@ export class PaymentRepository {
         }
       }
     }
+    if (options.additionalSelects) {
+      options.additionalSelects.forEach((select) => {
+        qb.addSelect(`payments.${select}`);
+      });
+    }
     return qb.getOne();
   }
 

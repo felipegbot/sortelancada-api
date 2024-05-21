@@ -35,7 +35,8 @@ export class CreatePaymentService {
       payment.common_user_id = user.id;
       payment.status = PaymentStatus.PENDING;
       payment.expires_at = date_of_expiration.toDate();
-      payment.value = raffle.price_number * generatePaymentDto.amount;
+      payment.value =
+        Math.round(raffle.price_number * generatePaymentDto.amount * 100) / 100;
       const paymentDb = await this.paymentRepository.createPayment(payment);
 
       const { id, point_of_interaction } = await createPixPayment({

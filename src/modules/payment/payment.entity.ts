@@ -32,7 +32,7 @@ export class Payment {
   @Column({ nullable: true })
   pix_qr_code: string;
 
-  @Column({ unique: true, nullable: true })
+  @Column({ unique: true, nullable: true, select: false })
   mercadopago_id: string;
 
   @Column()

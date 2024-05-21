@@ -221,6 +221,7 @@ export class RaffleController {
   async findOneRaffle(@Param('raffleId') raffleId: string) {
     const raffle = await this.queryRaffleService.findOneRaffle({
       where: [{ id: raffleId }],
+      relations: ['winner_common_user'],
     });
     const { initial_numbers_qtd, available_numbers_qtd } = raffle;
     const percentage = (available_numbers_qtd / initial_numbers_qtd) * 100;

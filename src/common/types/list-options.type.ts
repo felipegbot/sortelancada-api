@@ -5,4 +5,5 @@ export type ListOptions<T> = {
   per_page?: number;
   name?: string;
   ids?: string[];
+  additionalSelects?: string[];
 };
