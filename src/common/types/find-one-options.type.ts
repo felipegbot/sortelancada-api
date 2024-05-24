@@ -4,4 +4,5 @@ export type FindOneOptions<T> = {
   with_password_hash?: boolean;
   additionalSelects?: string[];
   with_users_raffle_number?: boolean;
+  raffle_with_gift_winners?: boolean;
 };

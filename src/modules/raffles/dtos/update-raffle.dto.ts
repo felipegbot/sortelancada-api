@@ -18,6 +18,15 @@ export class UpdateRaffleDto {
 
   @IsOptional()
   @IsString({
+    context: {
+      message: 'invalid-date_description',
+      userMessage: 'Descrição da data inválida',
+    },
+  })
+  date_description: string;
+
+  @IsOptional()
+  @IsString({
     context: { message: 'invalid-prize_name', userMessage: 'Prêmio inválido' },
   })
   prize_name: string;

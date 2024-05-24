@@ -5,6 +5,7 @@ import { DeepPartial, Repository } from 'typeorm';
 import { PaymentStatus } from '../enums/payment-status.enum';
 import ApiError from '@/common/error/entities/api-error.entity';
 import { FindOneOptions } from '@/common/types/find-one-options.type';
+import { ListOptions } from '@/common/types/list-options.type';
 
 @Injectable()
 export class PaymentRepository {
@@ -12,6 +13,48 @@ export class PaymentRepository {
     @InjectRepository(Payment)
     private readonly paymentRepository: Repository<Payment>,
   ) {}
+
+  async list(
+    options: ListOptions<Payment>,
+  ): Promise<{ payments: Payment[]; count: number }> {
+    const qb = this.paymentRepository.createQueryBuilder('payments');
+    const { page = 1, per_page = 10 } = options;
+
+    if (options.name) {
+      qb.where('payments.id::VARCHAR ILIKE :id', { id: `%${options.name}%` });
+    }
+
+    if (options.where) {
+      for (const where of options.where) {
+        for (const [key, value] of Object.entries(where)) {
+          qb.andWhere(`payments.${key} = :${key}`, { [key]: value });
+        }
+      }
+    }
+
+    if (options.ids) {
+      qb.andWhereInIds(options.ids);
+    }
+
+    if (options.additionalSelects) {
+      for (const additionalSelect of options.additionalSelects) {
+        qb.addSelect(`payments.${additionalSelect}`);
+      }
+    }
+    if (options.relations) {
+      options.relations.forEach((relation) =>
+        qb.leftJoinAndSelect(`payments.${relation}`, relation),
+      );
+    }
+
+    qb.orderBy('payments.created_at', 'DESC');
+
+    qb.skip((page - 1) * per_page);
+    qb.take(per_page);
+
+    const [payments, count] = await qb.getManyAndCount();
+    return { payments, count };
+  }
 
   async createPayment(payment: Payment): Promise<Payment> {
     const paymentDb = await this.paymentRepository.save(payment);

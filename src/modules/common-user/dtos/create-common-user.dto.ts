@@ -27,6 +27,5 @@ export class CreateCommonUserDto {
       userMessage: `Telefone inválido`,
     },
   })
-  @IsPhoneNumber('BR')
   phone: string;
 }

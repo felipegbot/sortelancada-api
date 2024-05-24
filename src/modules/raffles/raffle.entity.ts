@@ -25,6 +25,9 @@ export class Raffle {
   @Column({ nullable: true })
   description: string;
 
+  @Column({ nullable: true })
+  date_description: string;
+
   @Column({ type: 'simple-array', default: '' })
   medias_url: string[];
 

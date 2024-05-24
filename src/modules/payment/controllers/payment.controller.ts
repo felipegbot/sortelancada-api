@@ -27,6 +27,7 @@ import { ValidateWebhookService } from '../services/validate-payment-webhook.ser
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RaffleStatus } from '@/modules/raffles/enum/raffle-status.enum';
+import { PaginationDto } from '@/common/dtos/pagination.dto';
 
 @Controller('payment')
 export class PaymentController {
@@ -43,6 +44,16 @@ export class PaymentController {
   ) {
     this.lock = new AsyncLock();
     this.logger = new Logger(PaymentController.name);
+  }
+
+  @Get(`/list`)
+  @UseGuards(JwtAuthGuard)
+  async getPayments(@Query() query: PaginationDto) {
+    const { payments, count } = await this.queryPaymentService.list({
+      ...query,
+      relations: ['commonUser'],
+    });
+    return { ok: true, payments, count };
   }
 
   @Get('payments-by-user-phone/:userPhone')
@@ -67,6 +78,7 @@ export class PaymentController {
   async findOnePayment(@Param('paymentId') paymentId: string) {
     const payment = await this.queryPaymentService.findOne({
       where: [{ id: paymentId }],
+      relations: ['users_raffle_number'],
     });
     if (!payment)
       throw new ApiError('payment-not-found', 'Pagamento não encontrado', 400);
@@ -227,10 +239,15 @@ export class PaymentController {
     const payment = await this.queryPaymentService.findOne({
       where: [{ id: paymentId }],
     });
-    if (!payment) return { ok: true, message: 'Pagamento não encontrado' };
+    if (!payment)
+      throw new ApiError('payment-not-found', 'Pagamento não encontrado', 400);
 
     if (payment.status !== PaymentStatus.PENDING)
-      return { ok: true, message: 'Pagamento não está como pendente' };
+      throw new ApiError(
+        'payment-not-pending',
+        'Pagamento não está pendente',
+        400,
+      );
 
     await this.lock.acquire('generateRaffleNumber', async () => {
       const { count } =

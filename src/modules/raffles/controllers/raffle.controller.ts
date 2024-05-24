@@ -28,6 +28,7 @@ import { CreateOldUsersRaffleNumberService } from '@/modules/old-users-raffle-nu
 import { ListRaffleDto } from '../dtos/list-raffle.dto';
 import { ListOptions } from '@/common/types/list-options.type';
 import { Raffle } from '../raffle.entity';
+import { censorName } from '@/common/functions/censorName';
 
 @Controller('raffles')
 export class RaffleController {
@@ -82,6 +83,10 @@ export class RaffleController {
       where: [{ id: raffleId }],
     });
 
+    updateRaffleDto.gift_numbers = updateRaffleDto.gift_numbers?.map((number) =>
+      parseInt(number as any),
+    );
+
     if (!raffle) {
       throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
     }
@@ -110,7 +115,7 @@ export class RaffleController {
     }
 
     const medias_url = await this.uploadRaffleMediaService.uploadMedia(media);
-
+    console.log(medias_url.length, media.length);
     const updatedRaffle = await this.createRaffleService.updateRaffle(
       raffleId,
       { medias_url: [...raffle.medias_url, ...medias_url] },
@@ -218,15 +223,32 @@ export class RaffleController {
   }
 
   @Get(':raffleId')
-  async findOneRaffle(@Param('raffleId') raffleId: string) {
-    const raffle = await this.queryRaffleService.findOneRaffle({
+  async findOneRaffle(
+    @Param('raffleId') raffleId: string,
+    @Query('with-gift-winners') withGiftWinners: string,
+  ) {
+    const { winners, ...raffle } = await this.queryRaffleService.findOneRaffle({
       where: [{ id: raffleId }],
       relations: ['winner_common_user'],
+      raffle_with_gift_winners: withGiftWinners == 'true' ? true : false,
     });
     const { initial_numbers_qtd, available_numbers_qtd } = raffle;
     const percentage = (available_numbers_qtd / initial_numbers_qtd) * 100;
     delete raffle.available_numbers_qtd;
-    return { ok: true, raffle, percentage };
+    let censoredWinners = [];
+    if (winners?.length > 0) {
+      censoredWinners = winners?.map((winner) => {
+        return {
+          ...winner,
+
+          common_user: {
+            name: censorName(winner?.common_user.name),
+            phone: '',
+          },
+        };
+      });
+    }
+    return { ok: true, raffle, percentage, winners: censoredWinners };
   }
 
   @Get('winners/:raffleId')

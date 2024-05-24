@@ -61,7 +61,9 @@ export class RaffleRepository {
     return { raffles, count };
   }
 
-  async findOne(options: FindOneOptions<Raffle>): Promise<Raffle> {
+  async findOne(
+    options: FindOneOptions<Raffle>,
+  ): Promise<Raffle & { winners?: UsersRaffleNumber[] }> {
     const qb = this.raffleRepository.createQueryBuilder('raffles');
     if (options.where) {
       for (const where of options.where) {
@@ -82,6 +84,32 @@ export class RaffleRepository {
     }
     qb.addSelect('raffles.available_numbers_qtd');
     const raffle = await qb.getOne();
+
+    if (options.raffle_with_gift_winners && raffle.gift_numbers.length > 0) {
+      try {
+        const newQb = this.raffleRepository.createQueryBuilder('raffles');
+        newQb.where('raffles.id = :id', { id: raffle.id });
+        newQb.leftJoinAndSelect(
+          'raffles.users_raffle_number',
+          'users_raffle_number',
+        );
+        newQb.leftJoinAndSelect(
+          'users_raffle_number.common_user',
+          'common_user',
+        );
+        // the winner is the user that has the prize number or one of the gift numbers
+        newQb.andWhere('users_raffle_number.number IN (:...numbers)', {
+          numbers: raffle.gift_numbers,
+        });
+
+        const raffleWithGiftNumbers = await newQb.getOne();
+        return {
+          ...raffle,
+          winners: raffleWithGiftNumbers.users_raffle_number,
+        };
+      } catch (error) {}
+    }
+
     return raffle;
   }
 
