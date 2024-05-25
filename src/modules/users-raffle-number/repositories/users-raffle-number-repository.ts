@@ -127,7 +127,7 @@ export class UsersRaffleNumberRepository {
     qb.addGroupBy('common_user.id');
 
     qb.orderBy('count', 'DESC');
-    qb.take(10);
+    qb.take(3);
     const result = await qb.getRawMany();
     const formattedResult = result.map((obj) => {
       return {
