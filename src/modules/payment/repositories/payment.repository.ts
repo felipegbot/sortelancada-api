@@ -100,6 +100,9 @@ export class PaymentRepository {
       throw new ApiError('payment-not-found', 'Pagamento não encontrado', 404);
     }
     payment.status = status;
+    if (status === PaymentStatus.SUCCESS) {
+      payment.paid_at = new Date();
+    }
     const paymentDb = await this.paymentRepository.save(payment);
     return paymentDb;
   }
