@@ -112,7 +112,7 @@ export class UsersRaffleNumberRepository {
     return { urns, count };
   }
 
-  async getTopBuyers(raffleId: number): Promise<
+  async getTopBuyers(raffleId: string): Promise<
     {
       common_user_name: string;
       count: number;

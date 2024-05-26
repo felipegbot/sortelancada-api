@@ -14,6 +14,6 @@ export class QueryUsersRaffleNumberService {
   }
 
   async getTopBuyers(raffleId: string) {
-    return this.usersRaffleNumberRepository.getTopBuyers(+raffleId);
+    return this.usersRaffleNumberRepository.getTopBuyers(raffleId);
   }
 }
