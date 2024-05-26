@@ -135,6 +135,8 @@ export class UsersRaffleNumberRepository {
         count: obj.count as number,
       };
     });
-    return formattedResult;
+    //should get only the top 3
+    const finalResult = formattedResult.slice(0, 3);
+    return finalResult;
   }
 }
