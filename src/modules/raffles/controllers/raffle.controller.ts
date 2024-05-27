@@ -194,6 +194,9 @@ export class RaffleController {
       throw new ApiError('raffle-not-found', 'Rifa não encontrada', 404);
     }
 
+    if (raffle.status === RaffleStatus.FINISHED)
+      throw new ApiError('raffle-finished', 'Rifa já finalizada', 400);
+
     const { winner: winnerRaffleNumber, giftWinners } =
       await this.queryRaffleService.getWinners(raffleId);
 
