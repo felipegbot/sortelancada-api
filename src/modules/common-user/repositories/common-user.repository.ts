@@ -80,10 +80,8 @@ export class CommonUserRepository {
       if (!options.relations.includes('payments')) {
         qb.leftJoinAndSelect('common_users.payments', 'payments');
       }
-      qb.leftJoinAndSelect(
-        'payments.users_raffle_number',
-        'users_raffle_number',
-      );
+      qb.leftJoin('payments.users_raffle_number', 'users_raffle_number');
+      qb.addSelect('users_raffle_number.number');
     }
 
     const commonUser = await qb.getOne();
