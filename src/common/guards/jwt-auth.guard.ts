@@ -23,3 +23,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return user;
   }
 }
+
+@Injectable()
+export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
+  handleRequest(_err: any, user: any, info: any) {
+    if (info?.message === 'jwt expired')
+      throw new ApiError('token-expired', 'Token expirado', 401);
+    return user;
+  }
+}

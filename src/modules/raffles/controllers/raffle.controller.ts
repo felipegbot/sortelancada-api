@@ -14,7 +14,10 @@ import {
 import { CreateRaffleService } from '../services';
 import { CreateRaffleDto } from '../dtos/create-raffle.dto';
 import { Request } from 'express';
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import {
+  JwtAuthGuard,
+  OptionalJwtAuthGuard,
+} from '@/common/guards/jwt-auth.guard';
 import { AdminUser } from '@/modules/admin-user/admin-user.entity';
 import { QueryRaffleService } from '../services/query-raffle.service';
 import { QueryUsersRaffleNumberService } from '@/modules/users-raffle-number/services/query-users-raffle-number.service';
@@ -57,12 +60,16 @@ export class RaffleController {
   }
 
   @Get('list')
-  async listRaffle(@Query() query: ListRaffleDto) {
+  @UseGuards(OptionalJwtAuthGuard)
+  async listRaffle(@Query() query: ListRaffleDto, @Req() req: Request) {
+    const adminRequesting = req.user as AdminUser;
     const queryOptions: ListOptions<Raffle> = {
       ...query,
       relations: ['winner_common_user'],
     };
-
+    if (adminRequesting.id) {
+      queryOptions.additionalSelects = ['available_numbers_qtd'];
+    }
     if (query.status) queryOptions.where = [{ status: query.status }];
 
     const { raffles, count } =
